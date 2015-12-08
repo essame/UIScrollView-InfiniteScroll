@@ -52,6 +52,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) CGFloat infiniteScrollIndicatorMargin;
 
 /**
+ *  Custom action offset. Provide your own block if you wish to start preloading data earlier.
+ */
+@property (nonatomic, copy) CGFloat(^infiniteScrollActionOffsetHandler)(id scrollView, CGFloat proposedContentOffsetY, UIEdgeInsets originalContentInsets);
+
+/**
  *  Setup infinite scroll handler
  *
  *  @param handler a handler block

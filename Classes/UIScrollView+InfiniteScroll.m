@@ -83,6 +83,11 @@ static const void *kPBInfiniteScrollStateKey = &kPBInfiniteScrollStateKey;
  */
 @property (copy) void(^infiniteScrollHandler)(id scrollView);
 
+/**
+ *  Infinite scroll action offset block
+ */
+@property (copy) CGFloat(^actionOffsetHandler)(id scrollView, CGFloat proposedContentOffsetY, UIEdgeInsets originalContentInsets);
+
 @end
 
 @implementation _PBInfiniteScrollState
@@ -203,6 +208,14 @@ static const void *kPBInfiniteScrollStateKey = &kPBInfiniteScrollStateKey;
 
 - (CGFloat)infiniteScrollIndicatorMargin {
     return self.pb_infiniteScrollState.indicatorMargin;
+}
+
+- (void)setInfiniteScrollActionOffsetHandler:(CGFloat (^)(id, CGFloat, UIEdgeInsets))infiniteScrollActionOffsetHandler {
+    self.pb_infiniteScrollState.actionOffsetHandler = infiniteScrollActionOffsetHandler;
+}
+
+- (CGFloat (^)(id, CGFloat, UIEdgeInsets))infiniteScrollActionOffsetHandler {
+    return self.pb_infiniteScrollState.actionOffsetHandler;
 }
 
 #pragma mark - Private dynamic properties
@@ -461,11 +474,6 @@ static const void *kPBInfiniteScrollStateKey = &kPBInfiniteScrollStateKey;
 - (void)pb_scrollViewDidScroll:(CGPoint)contentOffset {
     _PBInfiniteScrollState *state = self.pb_infiniteScrollState;
     
-    CGFloat contentHeight = [self pb_clampContentSizeToFitVisibleBounds:self.contentSize];
-    
-    // The lower bound when infinite scroll should kick in
-    CGFloat actionOffset = contentHeight - self.bounds.size.height + [self pb_originalBottomInset];
-    
     // Disable infinite scroll when scroll view is empty
     // Default UITableView reports height = 1 on empty tables
     BOOL hasActualContent = (self.contentSize.height > 1);
@@ -483,6 +491,19 @@ static const void *kPBInfiniteScrollStateKey = &kPBInfiniteScrollStateKey;
     // did it kick in already?
     if(state.loading) {
         return;
+    }
+    
+    CGFloat contentHeight = [self pb_clampContentSizeToFitVisibleBounds:self.contentSize];
+    
+    // The lower bound when infinite scroll should kick in
+    CGFloat actionOffset = contentHeight - self.bounds.size.height + [self pb_originalBottomInset];
+    
+    // can use custom action handler?
+    if(self.infiniteScrollActionOffsetHandler) {
+        UIEdgeInsets originalContentInset = self.contentInset;
+        originalContentInset.bottom = [self pb_originalBottomInset];
+        
+        actionOffset = self.infiniteScrollActionOffsetHandler(self, actionOffset, originalContentInset);
     }
     
     if(contentOffset.y > actionOffset) {

@@ -77,6 +77,11 @@ static NSString *const kJSONNumPagesKey = @"nbPages";
     // Set custom indicator margin
     self.tableView.infiniteScrollIndicatorMargin = 40;
     
+    // Set custom action offset handler. Load more data when we reach about 75% of content size.
+    self.tableView.infiniteScrollActionOffsetHandler = ^CGFloat(UITableView *scrollView, CGFloat proposedContentOffsetY, UIEdgeInsets originalContentInsets) {
+        return (scrollView.contentSize.height - scrollView.bounds.size.height) * 0.75;
+    };
+    
     // Add infinite scroll handler
     [self.tableView addInfiniteScrollWithHandler:^(UITableView *tableView) {
         [weakSelf fetchData:^{
